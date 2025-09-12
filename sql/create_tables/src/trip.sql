@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS prd.trip (
+CREATE TABLE IF NOT EXISTS src.trip (
   trip_id            BIGINT,
   origin_city        STRING,
   destination_city   STRING,
@@ -12,4 +12,4 @@ CREATE TABLE IF NOT EXISTS prd.trip (
 )
 USING delta
 PARTITIONED BY (date(start_timestamp))
-LOCATION 's3://bucket-location/prd/trip/';
+LOCATION 's3://bucket-location/src/trip/';

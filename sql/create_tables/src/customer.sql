@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS prd.customer (
+CREATE TABLE IF NOT EXISTS src.customer (
   customer_id        BIGINT,
   name               STRING,
   email              STRING,
@@ -7,4 +7,4 @@ CREATE TABLE IF NOT EXISTS prd.customer (
   ingestion_ts       TIMESTAMP DEFAULT current_timestamp()
 )
 USING delta
-LOCATION 's3://bucket-location/prd/customer/';
+LOCATION 's3://bucket-location/src/customer/';
