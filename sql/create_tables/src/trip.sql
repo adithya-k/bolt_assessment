@@ -5,9 +5,8 @@ CREATE TABLE IF NOT EXISTS src.trip (
   airplane_id        BIGINT,
   start_timestamp    TIMESTAMP,
   end_timestamp      TIMESTAMP,
-  distance_km        DECIMAL(10,2),
-  duration_minutes   INT,
-  status             STRING,
+  duration_minutes   INT,              --additional attributes
+  status             STRING,           --additional attributes
   ingestion_ts       TIMESTAMP DEFAULT current_timestamp()
 )
 USING delta

@@ -1,0 +1,45 @@
+name: "air_boltic"
+version: "1.0.0"
+config-version: 2
+
+profile: "air_boltic"
+
+# Define folders → materialization strategies
+models:
+  air_boltic:
+    +materialized: view   # default
+    staging:
+      +schema: stg
+      +materialized: view
+      +tags: ["staging"]
+    marts:
+      +schema: prd
+      +materialized: table
+      +tags: ["prd"]
+
+    marts/facts:
+      +materialized: incremental
+      +tags: ["fact"]
+
+    marts/dims:
+      +materialized: table
+      +tags: ["dim"]
+
+# Enable dbt-utils (if installed)
+vars:
+  dbt_utils_dispatch_list: ['dbt_utils']
+
+# Seed files (if any in /seeds)
+seeds:
+  air_boltic:
+    +schema: src
+    +quote_columns: false
+
+# Tests → store results in a separate schema
+tests:
+  +schema: test_results
+
+# Snapshots (if you want SCDs later)
+snapshots:
+  air_boltic:
+    +schema: snapshot

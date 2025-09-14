@@ -1,0 +1,181 @@
+version: 1
+
+# ======================
+# Sources (Bronze Layer)
+# ======================
+sources:
+  - name: src
+    description: "Raw ingested source data for Air Boltic"
+    schema: src
+    tables:
+      - name: aeroplane_model_json_raw
+        description: "Raw JSON data for aeroplane models"
+        columns:
+          - name: raw_json
+            description: "Original JSON document"
+          - name: ingestion_ts
+            description: "Ingestion timestamp"
+
+      - name: aeroplane
+        description: "Aircraft registered on the platform"
+        columns:
+          - name: airplane_id
+            tests: [unique, not_null]
+          - name: airplane_model
+          - name: manufacturer
+
+      - name: customer
+        description: "End users who book trips"
+        columns:
+          - name: customer_id
+            tests: [unique, not_null]
+          - name: email
+            tests: [not_null]
+          - name: customer_group_id
+
+      - name: customer_group
+        description: "Group/company info for customers"
+        columns:
+          - name: id
+            tests: [unique, not_null]
+          - name: type
+          - name: name
+
+      - name: order
+        description: "Seat-level bookings for trips"
+        columns:
+          - name: order_id
+            tests: [unique, not_null]
+          - name: customer_id
+          - name: trip_id
+          - name: price_eur
+
+      - name: trip
+        description: "Individual flights operated on the platform"
+        columns:
+          - name: trip_id
+            tests: [unique, not_null]
+          - name: airplane_id
+          - name: origin_city
+          - name: destination_city
+          - name: start_timestamp
+          - name: end_timestamp
+
+# ======================
+# Staging Models (Silver Layer)
+# ======================
+models:
+  - name: stg_aeroplane_model
+    description: "Flattened aeroplane model data parsed from raw JSON"
+    columns:
+      - name: manufacturer
+      - name: model
+      - name: max_seats
+      - name: max_weight
+      - name: max_distance
+      - name: engine_type
+
+  - name: stg_aeroplane
+    description: "Cleaned aeroplane data with standardized columns"
+    columns:
+      - name: airplane_id
+        tests: [unique, not_null]
+      - name: airplane_model
+      - name: manufacturer
+
+  - name: stg_customer
+    description: "Cleaned customer data with normalized fields"
+    columns:
+      - name: customer_id
+        tests: [unique, not_null]
+      - name: email
+        tests: [not_null]
+      - name: customer_group_id
+
+  - name: stg_customer_group
+    description: "Cleaned customer group data"
+    columns:
+      - name: id
+        tests: [unique, not_null]
+      - name: name
+
+  - name: stg_order
+    description: "Cleaned order data with order_date derived"
+    columns:
+      - name: order_id
+        tests: [unique, not_null]
+      - name: customer_id
+      - name: trip_id
+      - name: price_eur
+        tests:
+          - not_null
+          - dbt_utils.expression_is_true:
+              expression: "price_eur >= 0"
+
+  - name: stg_trip
+    description: "Cleaned trip data with derived duration"
+    columns:
+      - name: trip_id
+        tests: [unique, not_null]
+      - name: airplane_id
+      - name: origin_city
+      - name: destination_city
+      - name: start_timestamp
+      - name: end_timestamp
+      - name: duration_minutes
+
+  # ======================
+  # PRD Models (Gold Layer)
+  # ======================
+  - name: dim_aeroplane
+    description: "Dimension table combining aircraft and model attributes"
+    columns:
+      - name: airplane_id
+        tests: [unique, not_null]
+      - name: airplane_model_id
+        description: "Surrogate key manufacturer|model"
+
+  - name: dim_customer
+    description: "Dimension table combining customers and customer groups"
+    columns:
+      - name: customer_id
+        tests: [unique, not_null]
+      - name: customer_group_id
+
+  - name: dim_date
+    description: "Calendar dimension for time-series reporting"
+    columns:
+      - name: date_id
+        tests: [unique, not_null]
+
+  - name: fact_orders
+    description: "Fact table for seat bookings"
+    columns:
+      - name: order_id
+        tests: [unique, not_null]
+      - name: customer_id
+        tests: [relationships]:
+                 - to: ref('dim_customer')
+                   field: customer_id
+      - name: trip_id
+      - name: airplane_id
+      - name: date_id
+        tests: [relationships]:
+                 - to: ref('dim_date')
+                   field: date_id
+
+  - name: fact_trips
+    description: "Fact table for flights aggregated with bookings and revenue"
+    columns:
+      - name: trip_id
+        tests: [unique, not_null]
+      - name: airplane_id
+      - name: booked_seats
+      - name: utilization_rate
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "utilization_rate <= 1"
+      - name: date_id
+        tests: [relationships]:
+                 - to: ref('dim_date')
+                   field: date_id
