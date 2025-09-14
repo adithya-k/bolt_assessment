@@ -57,13 +57,10 @@ The goal of this project is to design a scalable and analytics-ready data model 
 ### Future Enhancements
 
 - Add dim_route (origin-destination dimension).
-
 - Implement SCD Type 2 snapshots for dim_customer to track customer group changes.
-
 - Add real-time ingestion pipelines for orders.
-
 - Expand fact tables with payment details and loyalty program data.
 
-🧑‍💻 Author
+### 🧑‍💻 Author
 
 Designed and implemented by Adithya K as part of the Bolt assessment.
