@@ -1,48 +1,66 @@
-# bolt_assessment
-AirBoltic — Bolt assessment: scalable data model (ERD + Delta SQL), dbt examples &amp; CI/CD design
+# ✈️ Air Boltic — Bolt Analytics Assessment
 
-This repository contains my submission for Bolt's Air Boltic assessment:  
-a scalable analytics data model (ERD + SQL), partial implementation (Delta/Databricks/dbt examples),  
-and notes on CI/CD best practices.
+This repository contains the dbt implementation for Air Boltic, a hypothetical Bolt service for airplane ride-sharing.
+The goal of this project is to design a scalable and analytics-ready data model following Medallion Architecture (Bronze → Silver → Gold) and enable self-service analytics in Looker.
 
 ---
 
-## Repository contents
-- `erd/` — Entity Relationship Diagram (PNG + source files).
-- `sql/create_tables/` — Delta SQL `CREATE TABLE` statements for core entities:
-  - aeroplane_models  
-  - aeroplanes  
-  - trips  
-  - orders  
-  - customers  
-  - customer_groups  
-  - metrics (daily/weekly/monthly aggregates)
-- `dbt/` — Example dbt project (staging → core → marts) with basic tests.
-- `docs/` — Design rationale, assumptions, and future improvements.
-- `part2-ci-cd/` — CI/CD design notes (ideal vs real-world resource-limited setup).
+## 📂 Repository Contents
+
+| Directory / File | Description |
+|------------------|-------------|
+| `erd/` | ER diagrams (Source vs PRD star schema) |
+| `sql/create_tables/` | Delta SQL `CREATE TABLE` statements for raw (src) and PRD (star schema) tables |
+| `dbt/` | dbt project implementing staging → PRD transformations and tests |
+| `docs/design_rationale.md` | Additional context on modeling choices and trade-offs |
+| `README.md` | This file |
 
 ---
 
-## Key design decisions
-- **Storage:** S3 + Delta Lake for ACID, compaction, partition pruning, and time travel.
-- **Compute:** Databricks Spark SQL for transformations and scale-out processing.
-- **Modeling:** Canonical entities normalized; wide marts built for self-serve analytics.
-- **Transformations:** dbt used for modularity, tests, and documentation.
-- **Data quality:** freshness, uniqueness, referential integrity via dbt tests.
-- **Metrics:** Leadership-level daily/weekly/monthly aggregates (L0 metrics) alongside event-level detail.
+## 🏗 Architecture
+
+### Medallion Layers
+- **Bronze (src)**  
+  Raw ingested data from source systems, stored in Delta tables with minimal transformation.  
+  Example: `src.aeroplane_model_json_raw` holds raw JSON for aeroplane models.
+
+- **Silver (staging)**  
+  Cleansed and standardized staging models.  
+  Example: `stg_aeroplane_model` flattens JSON into tabular form.  
+  Example: `stg_trip` derives trip duration.
+
+- **Gold (prd)**  
+  Analytics-ready **star schema** for self-service in Looker.  
+  - Dimensions: `dim_aeroplane`, `dim_customer`, `dim_date`  
+  - Facts: `fact_orders`, `fact_trips`
 
 ---
 
-## How to review
-1. Open `erd/` for the overview of the data model.  
-2. Check `sql/create_tables/` for Delta SQL schema design.  
-3. Explore `dbt/` to see transformation and testing patterns.  
-4. Read `docs/design_rationale.md` for assumptions and trade-offs.  
+## 📘 Data Model ERD
+
+### Source Entities
+- `aeroplane_model_json_raw`  
+- `aeroplane`  
+- `customer_group`  
+- `customer`  
+- `order`  
+- `trip`
+
+### PRD Star Schema
+- **Dimensions**: `dim_aeroplane`, `dim_customer`, `dim_date`  
+- **Facts**: `fact_orders`, `fact_trips`
+
+*(See `/erd` for diagrams)*
 
 ---
 
-## Part 2 (CI/CD) — summary
-See `part2-ci-cd/README.md` for full details.
+### Future Enhancements
 
-- **Ideal setup:** Git-based workflow, automated dbt tests, schema diff checks, multi-env promotion (dev → staging → prod), rollback on failures.  
-- **Practical setup:** GitHub Actions for dbt tests, lightweight quality checks, manual promotion gates.  
+- Add dim_route (origin-destination dimension).
+- Implement SCD Type 2 snapshots for dim_customer to track customer group changes.
+- Add real-time ingestion pipelines for orders.
+- Expand fact tables with payment details and loyalty program data.
+
+### 🧑‍💻 Author
+
+Designed and implemented by Adithya K as part of the Bolt assessment.
